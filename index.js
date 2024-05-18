@@ -12,8 +12,6 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-console.log("env", process.env.MONGO_DB_STRING);
-
 const run = async () => {
   try {
     await mongoose.connect(config.database);

@@ -13,7 +13,7 @@ const ProjectSchema = new Schema({
   end: Date,
   bgColor: String,
   textColor: String,
-  img: String
+  thumbImg: String
 });
 
 const Project = mongoose.model("Project", ProjectSchema);
