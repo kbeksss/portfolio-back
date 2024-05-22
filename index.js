@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const authRouter = require("./app/auth");
 const projectsRouter = require("./app/projects");
 const upload = require("./middlewares/upload");
 const connectToDatabase = require("./db");
@@ -16,7 +17,7 @@ const run = async () => {
   app.get("/", (req, res) => {
     res.send("Hello World!");
   });
-
+  app.use("/api/auth", authRouter);
   app.use("/api/projects", upload.single("thumbImg"), projectsRouter);
 
   app.listen(port, () => {

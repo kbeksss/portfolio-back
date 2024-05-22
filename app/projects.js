@@ -28,7 +28,7 @@ router.get("/", async (req, res) => {
       project.thumbImg = url;
     }
   }
-  res.send(projects);
+  res.status(200).send(projects);
 });
 
 router.post("/", async (req, res) => {
@@ -57,7 +57,6 @@ router.post("/", async (req, res) => {
     await project.save();
     return res.status(200).json({ id: project._id });
   } catch (e) {
-    console.error(e);
     res.status(500).json({ message: e.message });
   }
 });
