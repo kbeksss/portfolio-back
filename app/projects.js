@@ -1,28 +1,37 @@
 const express = require("express");
-const multer = require("multer");
-const nanoid = require("nanoid");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const Project = require("../models/project.model");
-const config = require("../config");
 const path = require("path");
+const nanoid = require("nanoid");
+const {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+} = require("@aws-sdk/client-s3");
 const router = express.Router();
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, config.uploadPath);
-  },
-  filename: (req, file, cb) => {
-    cb(null, nanoid() + path.extname(file.originalname));
-  },
-});
+const bucketName = process.env.BUCKET_NAME;
+const bucketRegion = process.env.BUCKET_REGION;
 
-const upload = multer({ storage });
+const s3 = new S3Client({ region: bucketRegion });
 
 router.get("/", async (req, res) => {
   const projects = await Project.find();
+  for (const project of projects) {
+    if (project.thumbImg) {
+      const command = new GetObjectCommand({
+        Bucket: bucketName,
+        Key: project.thumbImg,
+      });
+      const url = await getSignedUrl(s3, command, { expiresIn: 3600 });
+      project.thumbImg = url;
+    }
+  }
   res.send(projects);
 });
 
-router.post("/", upload.single("thumbImg"), async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const data = req.body;
     const projectData = {
@@ -34,7 +43,15 @@ router.post("/", upload.single("thumbImg"), async (req, res) => {
       textColor: data.textColor,
     };
     if (req.file) {
-      projectData.thumbImg = req.file.filename;
+      const fileName = nanoid() + path.extname(req.file.originalname);
+      projectData.thumbImg = fileName;
+      const command = new PutObjectCommand({
+        Bucket: bucketName,
+        Key: fileName,
+        Body: req.file.buffer,
+        ContentType: req.file.mimetype,
+      });
+      await s3.send(command);
     }
     const project = new Project(projectData);
     await project.save();
@@ -42,6 +59,28 @@ router.post("/", upload.single("thumbImg"), async (req, res) => {
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: e.message });
+  }
+});
+
+router.delete("/", async (req, res) => {
+  const id = req.params.id;
+  try {
+    const project = await Project.findById(id);
+    if (project) {
+      if (project.thumbImg) {
+        const command = new DeleteObjectCommand({
+          Bucket: bucketName,
+          Key: project.thumbImg,
+        });
+        await s3.send(command);
+      }
+      await Project.findByIdAndDelete(id);
+      return res.status(200).json({ message: "Deleted successfully" });
+    } else {
+      res.status(404).json({ message: "Project not found" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 

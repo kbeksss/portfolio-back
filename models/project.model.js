@@ -9,11 +9,11 @@ const ProjectSchema = new Schema({
     type: String,
     required: true,
   },
-  start: Date,
-  end: Date,
+  start: String,
+  end: String,
   bgColor: String,
   textColor: String,
-  thumbImg: String
+  thumbImg: String,
 });
 
 const Project = mongoose.model("Project", ProjectSchema);

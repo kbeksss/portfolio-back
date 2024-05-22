@@ -1,11 +1,9 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const mongoose = require("mongoose");
-require("dotenv").config();
-
-const config = require("./config");
 const projectsRouter = require("./app/projects");
-
+const upload = require("./middlewares/upload");
+const connectToDatabase = require("./db");
 const port = process.env.PORT || 8000;
 
 const app = express();
@@ -13,17 +11,13 @@ app.use(express.json());
 app.use(cors());
 
 const run = async () => {
-  try {
-    await mongoose.connect(config.database);
-    console.log("DB is connected successfully");
-  } catch (e) {
-    console.error("not connected to DB", e);
-  }
+  await connectToDatabase();
+
   app.get("/", (req, res) => {
     res.send("Hello World!");
   });
 
-  app.use("/projects", projectsRouter);
+  app.use("/api/projects", upload.single("thumbImg"), projectsRouter);
 
   app.listen(port, () => {
     console.log("HTTP Server running on port: " + port);
