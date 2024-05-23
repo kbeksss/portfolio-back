@@ -69,6 +69,13 @@ class authController {
       return res.status(400).json({ message: "Users not found" });
     }
   }
+  async checkAdmin(req, res) {
+    try {
+      return res.status(200).json({ message: "You are admin" });
+    } catch (error) {
+      return res.status(400).json({ message: "Uknown error" });
+    }
+  }
 }
 
 module.exports = new authController();
