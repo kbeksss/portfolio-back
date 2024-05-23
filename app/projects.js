@@ -3,6 +3,8 @@ const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const Project = require("../models/project.model");
 const path = require("path");
 const nanoid = require("nanoid");
+const roleMiddleware = require("../middlewares/roleMiddleware");
+
 const {
   S3Client,
   PutObjectCommand,
@@ -31,7 +33,7 @@ router.get("/", async (req, res) => {
   res.status(200).send(projects);
 });
 
-router.post("/", async (req, res) => {
+router.post("/", roleMiddleware(['ADMIN']), async (req, res) => {
   try {
     const data = req.body;
     const projectData = {
@@ -61,7 +63,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.delete("/", async (req, res) => {
+router.delete("/", roleMiddleware(['ADMIN']), async (req, res) => {
   const id = req.params.id;
   try {
     const project = await Project.findById(id);
